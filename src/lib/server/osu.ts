@@ -1,6 +1,6 @@
 // osu! API v2 helpers: OAuth (authorization-code for user login, client-
 // credentials for the poller) plus typed access to the endpoints we use.
-import { env } from "./env"
+import { requireEnv } from "./env"
 
 const OSU_BASE = "https://osu.ppy.sh"
 const OAUTH_AUTHORIZE = `${OSU_BASE}/oauth/authorize`
@@ -68,8 +68,8 @@ export interface OsuBeatmapFull {
 
 export function buildAuthorizeUrl(state: string): string {
   const params = new URLSearchParams({
-    client_id: env.OSU_CLIENT_ID,
-    redirect_uri: env.OSU_AUTH_CALLBACK_URL,
+    client_id: requireEnv("OSU_CLIENT_ID"),
+    redirect_uri: requireEnv("OSU_AUTH_CALLBACK_URL"),
     response_type: "code",
     scope: "identify public",
     state,
@@ -84,11 +84,11 @@ export async function exchangeCodeForToken(
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({
-      client_id: env.OSU_CLIENT_ID,
-      client_secret: env.OSU_CLIENT_SECRET,
+      client_id: requireEnv("OSU_CLIENT_ID"),
+      client_secret: requireEnv("OSU_CLIENT_SECRET"),
       code,
       grant_type: "authorization_code",
-      redirect_uri: env.OSU_AUTH_CALLBACK_URL,
+      redirect_uri: requireEnv("OSU_AUTH_CALLBACK_URL"),
     }),
   })
   if (!res.ok) {
@@ -120,8 +120,8 @@ async function requestAppToken(): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({
-      client_id: env.OSU_CLIENT_ID,
-      client_secret: env.OSU_CLIENT_SECRET,
+      client_id: requireEnv("OSU_CLIENT_ID"),
+      client_secret: requireEnv("OSU_CLIENT_SECRET"),
       grant_type: "client_credentials",
       scope: "public",
     }),

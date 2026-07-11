@@ -62,7 +62,30 @@ Open http://localhost:3000.
 | `pnpm lint` / `pnpm format` | Oxlint / Oxfmt |
 | `tsx scripts/verify.ts` | End-to-end check against the live osu! API + DB |
 
-## Production database
+## Docker & deployment
 
-`compose.yml` runs `postgres:18` and applies `db/schema.sql` on first boot. Point
-the app at it with `DATABASE_URL` (e.g. `postgres://postgres:<pw>@db:5432/sppeedrun`).
+The `Dockerfile` builds a single image that runs **either** process:
+
+- **web** → `node build` (the default `CMD`)
+- **worker** → `node --import tsx src/worker/index.ts` (command override)
+
+`.github/workflows/docker-publish.yml` builds and pushes that image to **GHCR**
+(`ghcr.io/<owner>/<repo>`) on pushes to `main` and on `v*` tags, using the
+built-in `GITHUB_TOKEN` (no extra secrets needed — just ensure the repo allows
+GitHub Actions to publish packages).
+
+`compose.yml` is an example stack that runs everything from the published image:
+
+- `db` — `postgres:18`, applies `db/schema.sql` on first boot (empty volume only)
+- `web` — the SvelteKit server on port 3000 (`ORIGIN` set for CSRF on form posts)
+- `worker` — the poller, same image with the worker command
+
+```sh
+# Replace OWNER (or set SPPEEDRUN_IMAGE) and provide osu! creds in .env, then:
+export SPPEEDRUN_IMAGE=ghcr.io/<owner>/sppeedrun:latest
+docker compose up -d
+```
+
+`DATABASE_URL` is overridden in compose to point at the `db` service (the value
+in `.env` is for local dev). Note: the GHCR image name must be lowercase — the
+workflow's metadata step handles that automatically.
