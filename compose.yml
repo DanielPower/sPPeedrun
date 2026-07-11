@@ -1,24 +1,11 @@
 # Example production stack: Postgres + the web server + the poller worker, both
 # running from the image published to GHCR by .github/workflows/docker-publish.yml.
 #
-# Set SPPEEDRUN_IMAGE to your published image (default below — replace OWNER), and
-# provide the osu! OAuth credentials via a .env file (see .env / README). Then:
+# Set SPPEEDRUN_IMAGE if you want to override the published image (default below),
+# and provide the osu! OAuth credentials via a .env file (see .env / README). Then:
 #   docker compose up -d
 #
 # Dev instead uses a local Postgres (psql-18) on localhost:5432 and `pnpm dev`.
-
-x-app: &app
-  image: ${SPPEEDRUN_IMAGE:-ghcr.io/OWNER/sppeedrun:latest}
-  restart: unless-stopped
-  env_file: .env
-  environment:
-    NODE_ENV: production
-    # Point the app at the db service (overrides DATABASE_URL from .env, which is
-    # for local dev). Uses the same password as the db service below.
-    DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/sppeedrun
-  depends_on:
-    db:
-      condition: service_healthy
 
 services:
   db:
@@ -43,17 +30,35 @@ services:
   # SvelteKit server (adapter-node). ORIGIN is required for POST form actions
   # (e.g. Reset) to pass SvelteKit's CSRF origin check.
   web:
-    <<: *app
+    image: ${SPPEEDRUN_IMAGE:-ghcr.io/danielpower/sppeedrun:latest}
+    restart: unless-stopped
+    env_file: .env
     environment:
       NODE_ENV: production
+      OSU_CLIENT_ID: ${OSU_CLIENT_ID}
+      OSU_CLIENT_SECRET: ${OSU_CLIENT_SECRET}
+      OSU_AUTH_CALLBACK_URL: ${OSU_AUTH_CALLBACK_URL}
       DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/sppeedrun
       ORIGIN: ${ORIGIN:-http://localhost:3000}
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - "3000:3000"
 
   # Background poller: same image, worker entrypoint instead of the web server.
   worker:
-    <<: *app
+    image: ${SPPEEDRUN_IMAGE:-ghcr.io/danielpower/sppeedrun:latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      OSU_CLIENT_ID: ${OSU_CLIENT_ID}
+      OSU_CLIENT_SECRET: ${OSU_CLIENT_SECRET}
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/sppeedrun
+    depends_on:
+      db:
+        condition: service_healthy
     command: ["node", "--import", "tsx", "src/worker/index.ts"]
 
 volumes:
