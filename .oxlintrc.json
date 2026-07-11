@@ -1,0 +1,18 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn"],
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2024": true
+  },
+  "ignorePatterns": [
+    ".svelte-kit",
+    "build",
+    "node_modules"
+  ],
+  "rules": {
+    "no-unused-vars": "warn",
+    "no-console": "off"
+  }
+}

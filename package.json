@@ -1,0 +1,36 @@
+{
+  "name": "sppeedrun",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -n web,worker -c magenta,cyan \"vite dev\" \"pnpm worker\"",
+    "worker": "node --import tsx src/worker/index.ts",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "concurrently -n web,worker -c magenta,cyan \"node build\" \"node --import tsx src/worker/index.ts\"",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "lint": "oxlint",
+    "format": "oxfmt -w src scripts",
+    "format:check": "oxfmt -c src scripts"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-node": "^5.2.12",
+    "@sveltejs/kit": "^2.20.0",
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@types/node": "^26.1.1",
+    "concurrently": "^9.1.2",
+    "oxfmt": "^0.1.0",
+    "oxlint": "^0.15.0",
+    "svelte": "^5.20.0",
+    "svelte-check": "^4.1.4",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.11"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "postgres": "^3.4.5"
+  }
+}
