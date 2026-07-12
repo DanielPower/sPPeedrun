@@ -30,10 +30,8 @@
 </script>
 
 <section class="hero">
-  <h1>sPPeedrun</h1>
   <p class="muted">
-    Create a lobby, invite your friends, and race to the top of its leaderboard — highest total pp
-    when the clock (or pp goal) runs out wins.
+      Create a lobby and invite your friends. Highest pp when time runs out, or first to reach the pp goal wins.
   </p>
 </section>
 
