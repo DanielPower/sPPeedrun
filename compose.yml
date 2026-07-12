@@ -1,11 +1,5 @@
-# Example production stack: Postgres + the web server + the poller worker, both
-# running from the image published to GHCR by .github/workflows/docker-publish.yml.
-#
-# Set SPPEEDRUN_IMAGE if you want to override the published image (default below),
-# and provide the osu! OAuth credentials via a .env file (see .env / README). Then:
+# Example production stack. Provide the osu! OAuth credentials via `.env`, then:
 #   docker compose up -d
-#
-# Dev instead uses a local Postgres (psql-18) on localhost:5432 and `pnpm dev`.
 
 services:
   db:
@@ -18,19 +12,27 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
-      # Applies the schema on first boot (empty data volume only).
-      - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+      - pgdata:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d sppeedrun"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # SvelteKit server (adapter-node). ORIGIN is required for POST form actions
-  # (e.g. Reset) to pass SvelteKit's CSRF origin check.
+  migrate:
+    image: ghcr.io/danielpower/sppeedrun:latest
+    restart: "no"
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/sppeedrun
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["pnpm", "db:migrate"]
+
   web:
-    image: ${SPPEEDRUN_IMAGE:-ghcr.io/danielpower/sppeedrun:latest}
+    image: ghcr.io/danielpower/sppeedrun:latest
     restart: unless-stopped
     env_file: .env
     environment:
@@ -43,12 +45,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     ports:
       - "3000:3000"
 
-  # Background poller: same image, worker entrypoint instead of the web server.
   worker:
-    image: ${SPPEEDRUN_IMAGE:-ghcr.io/danielpower/sppeedrun:latest}
+    image: ghcr.io/danielpower/sppeedrun:latest
     restart: unless-stopped
     env_file: .env
     environment:
@@ -59,6 +62,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     command: ["node", "--import", "tsx", "src/worker/index.ts"]
 
 volumes:

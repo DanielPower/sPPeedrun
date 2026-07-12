@@ -76,13 +76,13 @@ GitHub Actions to publish packages).
 
 `compose.yml` is an example stack that runs everything from the published image:
 
-- `db` — `postgres:18`, applies `db/schema.sql` on first boot (empty volume only)
+- `db` — `postgres:18`
+- `migrate` — applies `db/schema.sql` on startup
 - `web` — the SvelteKit server on port 3000 (`ORIGIN` set for CSRF on form posts)
 - `worker` — the poller, same image with the worker command
 
 ```sh
-# Replace OWNER (or set SPPEEDRUN_IMAGE) and provide osu! creds in .env, then:
-export SPPEEDRUN_IMAGE=ghcr.io/<owner>/sppeedrun:latest
+# Provide osu! creds in .env, then:
 docker compose up -d
 ```
 
