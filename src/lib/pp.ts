@@ -3,7 +3,5 @@
  * pp * 0.95^(n-1). Sorts a copy so callers can pass any order.
  */
 export function weightedTotal(pps: number[]): number {
-  return [...pps]
-    .sort((a, b) => b - a)
-    .reduce((sum, pp, i) => sum + pp * 0.95 ** i, 0)
+  return [...pps].sort((a, b) => b - a).reduce((sum, pp, i) => sum + pp * 0.95 ** i, 0);
 }

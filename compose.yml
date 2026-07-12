@@ -22,7 +22,6 @@ services:
   migrate:
     image: ghcr.io/danielpower/sppeedrun:latest
     restart: "no"
-    env_file: .env
     environment:
       NODE_ENV: production
       DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:-postgres}@db:5432/sppeedrun
@@ -34,7 +33,6 @@ services:
   web:
     image: ghcr.io/danielpower/sppeedrun:latest
     restart: unless-stopped
-    env_file: .env
     environment:
       NODE_ENV: production
       OSU_CLIENT_ID: ${OSU_CLIENT_ID}
@@ -53,7 +51,6 @@ services:
   worker:
     image: ghcr.io/danielpower/sppeedrun:latest
     restart: unless-stopped
-    env_file: .env
     environment:
       NODE_ENV: production
       OSU_CLIENT_ID: ${OSU_CLIENT_ID}

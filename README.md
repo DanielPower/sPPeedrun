@@ -1,7 +1,7 @@
 # sPPeedrun
 
-Sign in with osu!, and sPPeedrun tracks your best play (by pp) on every beatmap
-in real time — racing your total weighted pp up a global leaderboard.
+Sign in with osu!, create a **lobby**, and race your friends: each lobby is its
+own speedrun with its own live leaderboard, ranked by total weighted pp.
 
 `Total pp = Σ pₙ · 0.95^(n-1)` (plays sorted by pp, highest first).
 
@@ -22,21 +22,28 @@ in real time — racing your total weighted pp up a global leaderboard.
 - **Auth**: `/login` → osu! OAuth (authorization-code). The callback `/auth` upserts
   the user and creates a cookie session. Registered redirect URI is
   `http://localhost:3000/auth`.
+- **Lobbies** (`$lib/server/lobbies.ts`): a lobby is `pending → active → finished`
+  with one end condition — **time limit**, **end date**, or **pp limit**. The
+  creator starts it (pending → active); anyone can join a pending/active lobby.
+  Home (`/`) lists lobbies + a create form; `/lobbies/[id]` is the lobby leaderboard;
+  `/lobbies/[id]/users/[userId]` is a player's plays in that lobby. Scores are
+  scoped per lobby — to start over, make a new lobby.
 - **Poller** (`src/worker/index.ts`): uses a client-credentials app token to follow
-  the osu!standard scores feed via `cursor_string`. For each tracked user's passed
-  score with pp, it keeps the best play per beatmap (`ON CONFLICT ... WHERE
-  EXCLUDED.pp > scores.pp`). The feed doesn't embed beatmap metadata, so each new
-  map is enriched once via `GET /api/v2/beatmaps/{id}`.
-- **Profile** (`/users/[id]`): best plays highest-pp first + total weighted pp. The
-  owner sees a **Reset** button that deletes all their scores.
-- **Live updates**: when the worker stores a new best it issues a Postgres
-  `NOTIFY` (`notifyScoreUpdate`). The web server holds a single `LISTEN`
-  (`$lib/server/events.ts`) and fans updates out to browsers over **Server-Sent
-  Events** at `/api/events`. The leaderboard and profile pages open an
-  `EventSource` (`$lib/live.ts`) and re-run their `load` via `invalidateAll()` on
-  a relevant update — the leaderboard on any update, a profile only for its own
-  user. No refresh needed. (SSE is used rather than WebSockets because the flow
-  is one-directional and needs no changes to the dev/prod server bootstrap.)
+  the osu!standard scores feed via `cursor_string`. For each member of an **active**
+  lobby, a passed score with pp is kept as their best play per beatmap in that lobby
+  (`ON CONFLICT ... WHERE EXCLUDED.pp > scores.pp`). It also finishes lobbies whose
+  time/date deadline passed (each tick) or whose top member reached the pp goal, and
+  LISTENs for lobby changes so a started/joined lobby is picked up within a tick. The
+  feed doesn't embed beatmap metadata, so each new map is enriched once via
+  `GET /api/v2/beatmaps/{id}`.
+- **Live updates**: the worker/web issue Postgres `NOTIFY` on the `scores_updated`
+  and `lobbies_updated` channels. The web server holds single `LISTEN`s
+  (`$lib/server/events.ts`) and fans a unified `{type,lobbyId,userId?}` event out to
+  browsers over **Server-Sent Events** at `/api/events`. Pages open an `EventSource`
+  (`$lib/live.ts`) and re-run their `load` via `invalidateAll()` on relevant events —
+  the home list on any lobby change, a lobby page on its own lobby. No refresh needed.
+  (SSE is used rather than WebSockets because the flow is one-directional and needs no
+  changes to the dev/prod server bootstrap.)
 
 ## Setup
 

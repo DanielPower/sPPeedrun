@@ -1,14 +1,14 @@
 // Shared postgres.js client (one pool per process: web server and worker).
-import postgres from "postgres"
-import { requireEnv } from "./env"
+import postgres from "postgres";
+import { requireEnv } from "./env";
 
-export type Sql = ReturnType<typeof postgres>
+export type Sql = ReturnType<typeof postgres>;
 
 // The pool is created lazily on first use. Merely importing this module — as
 // SvelteKit's build-time route analysis does — must not require DATABASE_URL;
 // only actually querying does. This reads env at runtime, matching
 // $env/dynamic/private semantics, and lets the app build with no env present.
-let pool: Sql | undefined
+let pool: Sql | undefined;
 function getPool(): Sql {
   if (!pool) {
     pool = postgres(requireEnv("DATABASE_URL"), {
@@ -28,9 +28,9 @@ function getPool(): Sql {
           parse: (x: string) => Number(x),
         },
       },
-    })
+    });
   }
-  return pool
+  return pool;
 }
 
 // Callable + property-forwarding proxy so existing call sites (sql`...`,
@@ -39,10 +39,10 @@ function getPool(): Sql {
 // DATABASE_URL at runtime with a clear error.
 export const sql = new Proxy(function () {} as unknown as Sql, {
   apply(_target, _thisArg, args: unknown[]) {
-    return (getPool() as unknown as (...a: unknown[]) => unknown)(...args)
+    return (getPool() as unknown as (...a: unknown[]) => unknown)(...args);
   },
   get(_target, prop: string | symbol) {
-    const value = (getPool() as unknown as Record<string | symbol, unknown>)[prop]
-    return typeof value === "function" ? value.bind(getPool()) : value
+    const value = (getPool() as unknown as Record<string | symbol, unknown>)[prop];
+    return typeof value === "function" ? value.bind(getPool()) : value;
   },
-}) as Sql
+}) as Sql;

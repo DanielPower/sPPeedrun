@@ -14,12 +14,12 @@
     </a>
     <nav class="nav-links">
       {#if data.user}
-        <a class="nav-user" href={`/users/${data.user.id}`}>
+        <span class="nav-user">
           {#if data.user.avatar_url}
             <img src={data.user.avatar_url} alt="" class="nav-avatar" />
           {/if}
           <span>{data.user.username}</span>
-        </a>
+        </span>
         <form method="POST" action="/logout">
           <button class="btn btn-ghost" type="submit">Log out</button>
         </form>

@@ -5,8 +5,12 @@
 
   let { data }: { data: PageData } = $props();
 
-  // This profile only cares about its own user's new best plays.
-  onMount(() => liveUpdates((userId) => userId === data.profile.id));
+  // Refresh on updates to this user within this lobby (or any lobby change).
+  onMount(() =>
+    liveUpdates(
+      (e) => e.lobbyId === data.lobby.id && (e.type === 'lobby' || e.userId === data.profile.id),
+    ),
+  );
 
   const fmtPp = (n: number) => Math.round(n).toLocaleString('en-US');
   const fmtAcc = (a: number | null) => (a == null ? '' : `${(a * 100).toFixed(2)}%`);
@@ -18,6 +22,10 @@
       .filter(Boolean);
   }
 </script>
+
+<p class="crumb">
+  <a href={`/lobbies/${data.lobby.id}`}>← {data.lobby.name}</a>
+</p>
 
 <section class="profile-head card">
   {#if data.profile.avatar_url}
@@ -31,32 +39,14 @@
   </div>
   <div class="total-box">
     <div class="total-pp">{fmtPp(data.totalPp)}<span class="unit">pp</span></div>
-    <div class="muted total-label">total weighted pp</div>
+    <div class="muted total-label">total in this lobby</div>
   </div>
 </section>
-
-{#if data.isOwner}
-  <div class="owner-actions">
-    <form
-      method="POST"
-      action={`/users/${data.profile.id}/reset`}
-      onsubmit={(e) => {
-        if (!confirm('Delete all of your tracked scores? This cannot be undone.')) {
-          e.preventDefault();
-        }
-      }}
-    >
-      <button class="btn btn-danger" type="submit">Reset my scores</button>
-    </form>
-  </div>
-{/if}
 
 <h2 class="section-title">Best plays</h2>
 
 {#if data.scores.length === 0}
-  <div class="card empty">
-    No tracked plays yet. Set some scores in osu!standard and they'll appear here within seconds.
-  </div>
+  <div class="card empty">No tracked plays in this lobby yet.</div>
 {:else}
   <ol class="plays">
     {#each data.scores as s, i (s.beatmap_id)}
@@ -85,12 +75,16 @@
 {/if}
 
 <style>
+  .crumb {
+    margin: 1.5rem 0 0;
+  }
+
   .profile-head {
     display: flex;
     align-items: center;
     gap: 1.25rem;
     padding: 1.5rem;
-    margin: 2rem 0 1.25rem;
+    margin: 0.5rem 0 1.25rem;
   }
 
   .avatar {
@@ -130,12 +124,6 @@
   .total-label {
     font-size: 0.8rem;
     margin-top: 0.35rem;
-  }
-
-  .owner-actions {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 1.5rem;
   }
 
   .section-title {

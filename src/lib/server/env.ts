@@ -11,16 +11,16 @@
 // dotenv loads .env into process.env for local dev (neither Vite nor a bare
 // node/tsx process does this on its own). In production the real environment
 // wins — dotenv never overrides variables that are already set.
-import "dotenv/config"
+import "dotenv/config";
 
 /**
  * Read a required private env var. Evaluated on use (runtime), so importing a
  * module that calls this does not require the variable to exist at build time.
  */
 export function requireEnv(name: string): string {
-  const value = process.env[name]
+  const value = process.env[name];
   if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`)
+    throw new Error(`Missing required environment variable: ${name}`);
   }
-  return value
+  return value;
 }
