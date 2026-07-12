@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { liveUpdates } from '$lib/live';
+  import PlayList from '$lib/components/PlayList.svelte';
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
@@ -113,6 +114,13 @@
     {/each}
   </ol>
 {/if}
+
+<h2 class="section-title">Best plays</h2>
+<PlayList
+  scores={data.bestScores}
+  lobbyId={data.lobby.id}
+  emptyMessage="No plays tracked in this lobby yet."
+/>
 
 <style>
   .lobby-head {

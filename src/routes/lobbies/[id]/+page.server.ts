@@ -1,7 +1,7 @@
 import type { Actions, PageServerLoad } from "./$types";
 import { error, fail } from "@sveltejs/kit";
 import { getLobby, isMember, joinLobby, startLobby } from "$lib/server/lobbies";
-import { getLobbyLeaderboard } from "$lib/server/scores";
+import { getLobbyBestScores, getLobbyLeaderboard } from "$lib/server/scores";
 
 export const load: PageServerLoad = async ({ params, locals }) => {
   const id = Number(params.id);
@@ -13,11 +13,14 @@ export const load: PageServerLoad = async ({ params, locals }) => {
     error(404, "Lobby not found");
   }
 
-  const leaderboard = await getLobbyLeaderboard(id);
+  const [leaderboard, bestScores] = await Promise.all([
+    getLobbyLeaderboard(id),
+    getLobbyBestScores(id),
+  ]);
   const member = locals.user ? await isMember(id, locals.user.id) : false;
   const isCreator = locals.user?.id === lobby.created_by;
 
-  return { lobby, leaderboard, member, isCreator };
+  return { lobby, leaderboard, bestScores, member, isCreator };
 };
 
 export const actions: Actions = {

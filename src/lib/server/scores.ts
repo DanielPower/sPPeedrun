@@ -57,6 +57,12 @@ export interface LeaderboardRow {
   play_count: number;
 }
 
+export interface LobbyBestScore extends ProfileScore {
+  user_id: number;
+  username: string;
+  avatar_url: string | null;
+}
+
 export async function upsertBeatmap(bm: BeatmapInput): Promise<void> {
   await sql`
     INSERT INTO beatmaps (id, title, artist, version, difficulty_rating, cover_url, updated_at)
@@ -115,6 +121,24 @@ export async function getLobbyUserScores(lobbyId: number, userId: number): Promi
 /** Total pp for a set of profile scores, using the shared osu! weighting. */
 export function totalPp(scores: { pp: number }[]): number {
   return weightedTotal(scores.map((s) => s.pp));
+}
+
+/**
+ * The best individual plays across every member of a lobby (one row per
+ * player+beatmap best, same rows the leaderboard sums), ordered by pp desc.
+ */
+export async function getLobbyBestScores(lobbyId: number, limit = 50): Promise<LobbyBestScore[]> {
+  return sql<LobbyBestScore[]>`
+    SELECT s.beatmap_id, s.score_id, s.pp, s.accuracy, s.mods, s.rank, s.ended_at,
+           b.title, b.artist, b.version, b.difficulty_rating, b.cover_url,
+           u.id AS user_id, u.username, u.avatar_url
+    FROM scores s
+    JOIN beatmaps b ON b.id = s.beatmap_id
+    JOIN users u ON u.id = s.user_id
+    WHERE s.lobby_id = ${lobbyId}
+    ORDER BY s.pp DESC
+    LIMIT ${limit}
+  `;
 }
 
 export async function getLobbyLeaderboard(lobbyId: number): Promise<LeaderboardRow[]> {

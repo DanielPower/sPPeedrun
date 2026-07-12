@@ -51,6 +51,22 @@ CREATE TABLE IF NOT EXISTS lobby_members (
   PRIMARY KEY (lobby_id, user_id)
 );
 
+-- Upgrade path: a pre-lobbies `scores` table (no lobby_id column) can't be
+-- altered into the new shape in place, and its rows are fully derived from the
+-- live feed and disposable, so just drop it. CREATE TABLE IF NOT EXISTS below
+-- then (re)creates it with the current schema on any environment, old or new.
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'scores')
+     AND NOT EXISTS (
+       SELECT 1 FROM information_schema.columns
+       WHERE table_name = 'scores' AND column_name = 'lobby_id'
+     )
+  THEN
+    DROP TABLE scores;
+  END IF;
+END $$;
+
 -- One row per (lobby, user, beatmap): the user's best play on that map by pp,
 -- within that lobby. Scores are derived from the live feed and disposable.
 CREATE TABLE IF NOT EXISTS scores (
