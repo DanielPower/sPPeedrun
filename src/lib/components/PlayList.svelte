@@ -1,6 +1,7 @@
 <script lang="ts">
   export interface PlayListItem {
     beatmap_id: number;
+    score_id: number;
     pp: number;
     accuracy: number | null;
     mods: string[];
@@ -53,23 +54,30 @@
             <span class="who-name">{s.username}</span>
           </a>
         {/if}
-        <div class="map">
-          <div class="title">
-            {s.artist ? `${s.artist} — ` : ''}{s.title ?? `Beatmap ${s.beatmap_id}`}
+        <a
+          class="score-link"
+          href={`https://osu.observer/score/${s.score_id}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <div class="map">
+            <div class="title">
+              {s.artist ? `${s.artist} — ` : ''}{s.title ?? `Beatmap ${s.beatmap_id}`}
+            </div>
+            <div class="sub muted">
+              {#if s.version}<span class="ver">[{s.version}]</span>{/if}
+              {#if s.difficulty_rating != null}<span class="stars"
+                  >★ {s.difficulty_rating.toFixed(2)}</span
+                >{/if}
+              {#each modAcronyms(s.mods) as mod (mod)}<span class="mod">{mod}</span>{/each}
+            </div>
           </div>
-          <div class="sub muted">
-            {#if s.version}<span class="ver">[{s.version}]</span>{/if}
-            {#if s.difficulty_rating != null}<span class="stars"
-                >★ {s.difficulty_rating.toFixed(2)}</span
-              >{/if}
-            {#each modAcronyms(s.mods) as mod (mod)}<span class="mod">{mod}</span>{/each}
+          <div class="stats">
+            {#if s.rank}<span class="rank rank-{s.rank}">{s.rank}</span>{/if}
+            {#if s.accuracy != null}<span class="acc muted">{fmtAcc(s.accuracy)}</span>{/if}
           </div>
-        </div>
-        <div class="stats">
-          {#if s.rank}<span class="rank rank-{s.rank}">{s.rank}</span>{/if}
-          {#if s.accuracy != null}<span class="acc muted">{fmtAcc(s.accuracy)}</span>{/if}
-        </div>
-        <span class="pp play-pp">{fmtPp(s.pp)}pp</span>
+          <span class="pp play-pp">{fmtPp(s.pp)}pp</span>
+        </a>
       </li>
     {/each}
   </ol>
@@ -125,6 +133,14 @@
     border-radius: 50%;
     object-fit: cover;
     border: 1px solid var(--border);
+  }
+
+  /* Keeps .map/.stats/.play-pp as direct grid items of .play despite being
+     wrapped in this anchor, and neutralises default link styling. */
+  .score-link {
+    display: contents;
+    color: inherit;
+    text-decoration: none;
   }
 
   .title {
